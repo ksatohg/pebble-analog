@@ -71,7 +71,6 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 
   // 時報
   if(t->tm_min == 0){
-    //vibes_enqueue_custom_pattern(pat);
     switch (t->tm_hour % 12) {
       case 1:
         vibes_enqueue_custom_pattern(pat_01);
