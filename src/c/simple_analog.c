@@ -31,13 +31,38 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   GPoint center = grect_center_point(&bounds);
 
-  // 秒針の長さを算出。PebbleRound なら前者、違えば後者
-  const int16_t second_hand_length = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2);
-
   // 現在時刻を取得
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
   
+  //------ 短針　-------
+  // 塗る色を白に、枠線を黒にする
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+
+  // 短針を時の角度に回転する
+  gpath_rotate_to(s_hour_arrow, (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6));
+  gpath_draw_filled(ctx, s_hour_arrow);
+  gpath_draw_outline(ctx, s_hour_arrow);
+
+  //------ 長針　-------
+  // 塗る色を白に、枠線を黒にする
+  #ifdef PBL_COLOR
+    graphics_context_set_fill_color(ctx, GColorRed);
+  #else
+    graphics_context_set_fill_color(ctx, GColorWhite);
+  #endif
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+
+  // 長針を分の角度に回転する
+  gpath_rotate_to(s_minute_arrow, TRIG_MAX_ANGLE * t->tm_min / 60);
+  gpath_draw_filled(ctx, s_minute_arrow);
+  gpath_draw_outline(ctx, s_minute_arrow);
+
+  //------ 秒針　-------
+  // 秒針の長さを算出。PebbleRound なら前者、違えば後者
+  const int16_t second_hand_length = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2);
+
   // 秒針の角度を算出 （TRIG_MAX_ANGLE は360度のこと）
   int32_t second_angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
   
@@ -51,26 +76,12 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_draw_line(ctx, second_hand, center);
 
-  // 塗る色を白に、枠線を黒にする
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_context_set_stroke_color(ctx, GColorBlack);
-
-  // 長針を分の角度に回転する
-  gpath_rotate_to(s_minute_arrow, TRIG_MAX_ANGLE * t->tm_min / 60);
-  gpath_draw_filled(ctx, s_minute_arrow);
-  gpath_draw_outline(ctx, s_minute_arrow);
-
-  // 短針を時の角度に回転する
-  gpath_rotate_to(s_hour_arrow, (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6));
-  gpath_draw_filled(ctx, s_hour_arrow);
-  gpath_draw_outline(ctx, s_hour_arrow);
-
   // 中心に黒点を打つ
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, GRect(bounds.size.w / 2 - 1, bounds.size.h / 2 - 1, 3, 3), 0, GCornerNone);
 
   // 時報
-  if(t->tm_min == 0){
+  if(t->tm_min == 0 && t->tm_sec == 0){
     switch (t->tm_hour % 12) {
       case 1:
         vibes_enqueue_custom_pattern(pat_01);

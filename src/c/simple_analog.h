@@ -86,18 +86,20 @@ static const struct GPathInfo ANALOG_BG_POINTS[] = {
 
 };
 
+// 長針の図形
 static const GPathInfo MINUTE_HAND_POINTS = {
   3, (GPoint []) {
-    { -8, 20 },
-    { 8, 20 },
+    { -6, 20 },
+    { 6, 20 },
     { 0, -80 }
   }
 };
 
+// 短針の図形
 static const GPathInfo HOUR_HAND_POINTS = {
   3, (GPoint []){
-    {-6, 20},
-    {6, 20},
+    {-8, 20},
+    {8, 20},
     {0, -60}
   }
 };
