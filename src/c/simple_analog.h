@@ -101,3 +101,72 @@ static const GPathInfo HOUR_HAND_POINTS = {
     {0, -60}
   }
 };
+
+// バイブレーションパターンの定義
+#define ON_S 100
+#define OFF_S 100
+#define ON_L 400
+#define OFF_L 100
+
+static const uint32_t rom_01[] = { ON_S };
+static const uint32_t rom_02[] = { ON_S, OFF_S, ON_S };
+static const uint32_t rom_03[] = { ON_S, OFF_S, ON_S, OFF_S, ON_S };
+static const uint32_t rom_04[] = { ON_S, OFF_S, ON_L };
+static const uint32_t rom_05[] = { ON_L };
+static const uint32_t rom_06[] = { ON_L, OFF_S, ON_S };
+static const uint32_t rom_07[] = { ON_L, OFF_S, ON_S, OFF_S, ON_S };
+static const uint32_t rom_08[] = { ON_L, OFF_S, ON_S, OFF_S, ON_S, OFF_S, ON_S };
+static const uint32_t rom_09[] = { ON_S, OFF_S, ON_L, OFF_S, ON_L };
+static const uint32_t rom_10[] = { ON_L, OFF_S, ON_L };
+static const uint32_t rom_11[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S };
+static const uint32_t rom_12[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S, OFF_S, ON_S };
+
+VibePattern pat_01 = {
+  .durations = rom_01,
+  .num_segments = ARRAY_LENGTH(rom_01),
+};
+VibePattern pat_02 = {
+  .durations = rom_02,
+  .num_segments = ARRAY_LENGTH(rom_02),
+};
+VibePattern pat_03 = {
+  .durations = rom_03,
+  .num_segments = ARRAY_LENGTH(rom_03),
+};
+VibePattern pat_04 = {
+  .durations = rom_04,
+  .num_segments = ARRAY_LENGTH(rom_04),
+};
+VibePattern pat_05 = {
+  .durations = rom_05,
+  .num_segments = ARRAY_LENGTH(rom_05),
+};
+VibePattern pat_06 = {
+  .durations = rom_06,
+  .num_segments = ARRAY_LENGTH(rom_06),
+};
+VibePattern pat_07 = {
+  .durations = rom_07,
+  .num_segments = ARRAY_LENGTH(rom_07),
+};
+VibePattern pat_08 = {
+  .durations = rom_08,
+  .num_segments = ARRAY_LENGTH(rom_08),
+};
+VibePattern pat_09 = {
+  .durations = rom_09,
+  .num_segments = ARRAY_LENGTH(rom_09),
+};
+VibePattern pat_10 = {
+  .durations = rom_10,
+  .num_segments = ARRAY_LENGTH(rom_10),
+};
+VibePattern pat_11 = {
+  .durations = rom_11,
+  .num_segments = ARRAY_LENGTH(rom_11),
+};
+VibePattern pat_12 = {
+  .durations = rom_12,
+  .num_segments = ARRAY_LENGTH(rom_12),
+};
+

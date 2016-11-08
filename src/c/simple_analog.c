@@ -68,6 +68,49 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   // 中心に黒点を打つ
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, GRect(bounds.size.w / 2 - 1, bounds.size.h / 2 - 1, 3, 3), 0, GCornerNone);
+
+  // 時報
+  if(t->tm_min == 0){
+    //vibes_enqueue_custom_pattern(pat);
+    switch (t->tm_hour % 12) {
+      case 1:
+        vibes_enqueue_custom_pattern(pat_01);
+        break;
+      case 2:
+        vibes_enqueue_custom_pattern(pat_02);
+        break;
+      case 3:
+        vibes_enqueue_custom_pattern(pat_03);
+        break;
+      case 4:
+        vibes_enqueue_custom_pattern(pat_04);
+        break;
+      case 5:
+        vibes_enqueue_custom_pattern(pat_05);
+        break;
+      case 6:
+        vibes_enqueue_custom_pattern(pat_06);
+        break;
+      case 7:
+        vibes_enqueue_custom_pattern(pat_07);
+        break;
+      case 8:
+        vibes_enqueue_custom_pattern(pat_08);
+        break;
+      case 9:
+        vibes_enqueue_custom_pattern(pat_09);
+        break;
+      case 10:
+        vibes_enqueue_custom_pattern(pat_10);
+        break;
+      case 11:
+        vibes_enqueue_custom_pattern(pat_11);
+        break;
+      case 0:
+        vibes_enqueue_custom_pattern(pat_12);
+        break;
+    }
+  }
 }
 
 // 日付の更新
