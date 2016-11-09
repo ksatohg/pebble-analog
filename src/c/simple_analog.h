@@ -89,8 +89,8 @@ static const struct GPathInfo ANALOG_BG_POINTS[] = {
 // 長針の図形
 static const GPathInfo MINUTE_HAND_POINTS = {
   3, (GPoint []) {
-    { -6, 20 },
-    { 6, 20 },
+    { -6, 10 },
+    { 6, 10 },
     { 0, -80 }
   }
 };
@@ -98,8 +98,8 @@ static const GPathInfo MINUTE_HAND_POINTS = {
 // 短針の図形
 static const GPathInfo HOUR_HAND_POINTS = {
   3, (GPoint []){
-    {-8, 20},
-    {8, 20},
+    {-8, 10},
+    {8, 10},
     {0, -60}
   }
 };
@@ -110,6 +110,7 @@ static const GPathInfo HOUR_HAND_POINTS = {
 #define ON_L 400
 #define OFF_L 100
 
+static const uint32_t rom_BT[] = { ON_S, OFF_S, ON_L, OFF_S, ON_L, OFF_S, ON_S };
 static const uint32_t rom_01[] = { ON_S };
 static const uint32_t rom_02[] = { ON_S, OFF_S, ON_S };
 static const uint32_t rom_03[] = { ON_S, OFF_S, ON_S, OFF_S, ON_S };
@@ -123,6 +124,10 @@ static const uint32_t rom_10[] = { ON_L, OFF_S, ON_L };
 static const uint32_t rom_11[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S };
 static const uint32_t rom_12[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S, OFF_S, ON_S };
 
+VibePattern pat_BT = {
+  .durations = rom_BT,
+  .num_segments = ARRAY_LENGTH(rom_BT),
+};
 VibePattern pat_01 = {
   .durations = rom_01,
   .num_segments = ARRAY_LENGTH(rom_01),

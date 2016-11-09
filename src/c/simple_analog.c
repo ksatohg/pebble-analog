@@ -4,11 +4,12 @@
 
 static Window *s_window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer;
-static TextLayer *s_day_label, *s_num_label;
+static TextLayer *s_day_label, *s_num_label, *s_bt_label;
 
 static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPath *s_minute_arrow, *s_hour_arrow;
-static char s_num_buffer[4], s_day_buffer[6];
+static char s_num_buffer[12], s_day_buffer[6];
+static char s_bt_buffer[12];
 
 // 背景の更新
 static void bg_update_proc(Layer *layer, GContext *ctx) {
@@ -129,12 +130,12 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
 
-  // 曜日フォーマットにして、曜日テキストレイヤーにセット
-  strftime(s_day_buffer, sizeof(s_day_buffer), "%a", t);
-  text_layer_set_text(s_day_label, s_day_buffer);
   // 日付フォーマットにして、日付テキストレイヤーにセット
-  strftime(s_num_buffer, sizeof(s_num_buffer), "%d", t);
+  strftime(s_num_buffer, sizeof(s_num_buffer), "%m/%d %a", t);
   text_layer_set_text(s_num_label, s_num_buffer);
+  // 曜日フォーマットにして、曜日テキストレイヤーにセット
+  //strftime(s_day_buffer, sizeof(s_day_buffer), "(%a)", t);
+  //text_layer_set_text(s_day_label, s_day_buffer);
 }
 
 // 秒タイマー
@@ -145,6 +146,11 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   // layer_mark_dirtyを呼んだ瞬間に再描画されるわけではなく、非同期で短時間後に再描画されるとのこと。
 }
 
+// BT接続状況の更新
+static void handle_bluetooth(bool connected) {
+  text_layer_set_text(s_bt_label, connected ? "" : "BT LOST !!");
+  vibes_enqueue_custom_pattern(pat_BT);
+}
 
 // ウインドウのロード時の処理
 static void window_load(Window *window) {
@@ -152,12 +158,19 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  // 背景レイヤーを作成
+  // 背景レイヤー（文字盤）を作成
   s_simple_bg_layer = layer_create(bounds);
   // 背景レイヤーが更新されたときのコールバック関数に bg_update_proc を設定
   layer_set_update_proc(s_simple_bg_layer, bg_update_proc);
   // 背景レイヤーを追加
   layer_add_child(window_layer, s_simple_bg_layer);
+
+  // 針レイヤーを作成
+  s_hands_layer = layer_create(bounds);
+  // 針レイヤーが更新されたときのコールバック関数に hands_update_proc を設定
+  layer_set_update_proc(s_hands_layer, hands_update_proc);
+  // 針レイヤーを追加
+  layer_add_child(window_layer, s_hands_layer);
 
   // 日付レイヤーを作成
   s_date_layer = layer_create(bounds);
@@ -166,34 +179,40 @@ static void window_load(Window *window) {
   // 日付レイヤーを追加
   layer_add_child(window_layer, s_date_layer);
 
-  // 曜日テキストレイヤーを作成
-  s_day_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(63, 114, 27, 20),
-    GRect(46, 114, 27, 20)));
-  // 曜日をセット
-  text_layer_set_text(s_day_label, s_day_buffer);
-  text_layer_set_background_color(s_day_label, GColorBlack);
-  text_layer_set_text_color(s_day_label, GColorWhite);
-  text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-  layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
-
   // 日付テキストレイヤーを作成
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90, 114, 18, 20),
-    GRect(73, 114, 18, 20)));
+    GRect(55, 110, 100, 20),
+    GRect(40, 100, 100, 20)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
-  text_layer_set_background_color(s_num_label, GColorBlack);
-  text_layer_set_text_color(s_num_label, GColorWhite);
+  text_layer_set_background_color(s_num_label, GColorClear);
+  text_layer_set_text_color(s_num_label, GColorCyan);
   text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
 
-  // 鉢レイヤーを作成
-  s_hands_layer = layer_create(bounds);
-  // 針レイヤーが更新されたときのコールバック関数に hands_update_proc を設定
-  layer_set_update_proc(s_hands_layer, hands_update_proc);
-  // 針レイヤーを追加
-  layer_add_child(window_layer, s_hands_layer);
+  //// 曜日テキストレイヤーを作成
+  //s_day_label = text_layer_create(PBL_IF_ROUND_ELSE(
+  //  GRect(50, 114, 50, 20),
+  //  GRect(50, 114, 50, 20)));
+  //// 曜日をセット
+  //text_layer_set_text(s_day_label, s_day_buffer);
+  //text_layer_set_background_color(s_day_label, GColorClear);
+  //text_layer_set_text_color(s_day_label, GColorCyan);
+  //text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  //layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
+
+  // BTテキストレイヤーを作成
+  s_bt_label = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(55,  70, 100, 20),
+    GRect(40,  50, 100, 20)));
+  // 日付をセット
+  text_layer_set_text(s_bt_label, s_bt_buffer);
+  text_layer_set_background_color(s_bt_label, GColorClear);
+  text_layer_set_text_color(s_bt_label, GColorRed);
+  text_layer_set_font(s_bt_label, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  layer_add_child(s_date_layer, text_layer_get_layer(s_bt_label));
+  handle_bluetooth(connection_service_peek_pebble_app_connection());
+
 }
 
 static void window_unload(Window *window) {
@@ -238,6 +257,12 @@ static void init() {
 
   // 秒タイマーを起動
   tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
+
+  // Bluetooth割り込みを有効にする
+  connection_service_subscribe((ConnectionHandlers) {
+    .pebble_app_connection_handler = handle_bluetooth
+  });
+
 }
 
 static void deinit() {
