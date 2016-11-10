@@ -110,7 +110,7 @@ static const GPathInfo HOUR_HAND_POINTS = {
 #define ON_L 400
 #define OFF_L 100
 
-static const uint32_t rom_BT[] = { ON_S, OFF_S, ON_L, OFF_S, ON_L, OFF_S, ON_S };
+static const uint32_t rom_BT[] = { ON_S, OFF_S, ON_L, OFF_S, 300, OFF_S, ON_S };
 static const uint32_t rom_01[] = { ON_S };
 static const uint32_t rom_02[] = { ON_S, OFF_S, ON_S };
 static const uint32_t rom_03[] = { ON_S, OFF_S, ON_S, OFF_S, ON_S };

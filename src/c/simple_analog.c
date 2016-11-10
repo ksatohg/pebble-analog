@@ -10,6 +10,7 @@ static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[12], s_day_buffer[6];
 static char s_bt_buffer[12];
+static bool bt_cond = true;
 
 // 背景の更新
 static void bg_update_proc(Layer *layer, GContext *ctx) {
@@ -149,7 +150,12 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
 // BT接続状況の更新
 static void handle_bluetooth(bool connected) {
   text_layer_set_text(s_bt_label, connected ? "" : "BT LOST !!");
-  vibes_enqueue_custom_pattern(pat_BT);
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_bluetooth: connected is %s", connected ? "true" : "false");
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_bluetooth: bt_cond is %s", bt_cond ? "true" : "false");
+  if (connected != bt_cond) {
+    vibes_enqueue_custom_pattern(pat_BT);
+    bt_cond = connected;
+  }
 }
 
 // ウインドウのロード時の処理
@@ -181,13 +187,13 @@ static void window_load(Window *window) {
 
   // 日付テキストレイヤーを作成
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(55, 110, 100, 20),
-    GRect(40, 100, 100, 20)));
+    GRect(45, 110, 100, 26),
+    GRect(30, 100, 100, 26)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
   text_layer_set_background_color(s_num_label, GColorClear);
   text_layer_set_text_color(s_num_label, GColorCyan);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
 
   //// 曜日テキストレイヤーを作成
@@ -274,6 +280,7 @@ static void deinit() {
   }
 
   tick_timer_service_unsubscribe();
+  connection_service_unsubscribe();
   window_destroy(s_window);
 }
 
