@@ -105,24 +105,24 @@ static const GPathInfo HOUR_HAND_POINTS = {
 };
 
 // バイブレーションパターンの定義
-#define ON_S 100
+#define ON_S 200
 #define OFF_S 100
 #define ON_L 400
-#define OFF_L 100
+#define OFF_L 200
 
-static const uint32_t rom_BT[] = { ON_S, OFF_S, ON_L, OFF_S, 300, OFF_S, ON_S };
+static const uint32_t rom_BT[] = { 100,100, 400,100, 300,100, 100 };
 static const uint32_t rom_01[] = { ON_S };
 static const uint32_t rom_02[] = { ON_S, OFF_S, ON_S };
 static const uint32_t rom_03[] = { ON_S, OFF_S, ON_S, OFF_S, ON_S };
 static const uint32_t rom_04[] = { ON_S, OFF_S, ON_L };
 static const uint32_t rom_05[] = { ON_L };
-static const uint32_t rom_06[] = { ON_L, OFF_S, ON_S };
-static const uint32_t rom_07[] = { ON_L, OFF_S, ON_S, OFF_S, ON_S };
-static const uint32_t rom_08[] = { ON_L, OFF_S, ON_S, OFF_S, ON_S, OFF_S, ON_S };
-static const uint32_t rom_09[] = { ON_S, OFF_S, ON_L, OFF_S, ON_L };
-static const uint32_t rom_10[] = { ON_L, OFF_S, ON_L };
-static const uint32_t rom_11[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S };
-static const uint32_t rom_12[] = { ON_L, OFF_S, ON_L, OFF_S, ON_S, OFF_S, ON_S };
+static const uint32_t rom_06[] = { ON_L, OFF_L, ON_S };
+static const uint32_t rom_07[] = { ON_L, OFF_L, ON_S, OFF_S, ON_S };
+static const uint32_t rom_08[] = { ON_L, OFF_L, ON_S, OFF_S, ON_S, OFF_S, ON_S };
+static const uint32_t rom_09[] = { ON_S, OFF_S, ON_L, OFF_L, ON_L };
+static const uint32_t rom_10[] = { ON_L, OFF_L, ON_L };
+static const uint32_t rom_11[] = { ON_L, OFF_L, ON_L, OFF_L, ON_S };
+static const uint32_t rom_12[] = { ON_L, OFF_L, ON_L, OFF_L, ON_S, OFF_S, ON_S };
 
 VibePattern pat_BT = {
   .durations = rom_BT,
