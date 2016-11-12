@@ -3,7 +3,8 @@
 #include "pebble.h"
 
 static Window *s_window;
-static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer;
+static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer, *s_digit_layer;
+static TextLayer *s_hour_label, *s_minute_label;
 static TextLayer *s_day_label, *s_num_label, *s_bt_label;
 
 static GPath *s_tick_paths[NUM_CLOCK_TICKS];
@@ -11,6 +12,7 @@ static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[12], s_day_buffer[6];
 static char s_bt_buffer[12];
 static bool bt_cond = true;
+static char s_digit_minute_buffer[6], s_digit_hour_buffer[6];
 
 // 背景の更新
 static void bg_update_proc(Layer *layer, GContext *ctx) {
@@ -125,6 +127,45 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   }
 }
 
+
+// 時刻文字表示の更新
+static void digit_update_proc(Layer *layer, GContext *ctx) {
+
+  #define digit_x_offset 5
+  #define digit_y_offset 10
+  
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "digit_update_proc: start");
+  
+  // レイヤーの矩形と中心を取得
+  GRect bounds = layer_get_bounds(layer);
+  GPoint center = grect_center_point(&bounds);
+
+  // 現在時刻を取得
+  time_t now = time(NULL);
+  struct tm *t = localtime(&now);
+  
+  //------ 分表示位置の算出 -------
+  // 中心からの距離を算出。PebbleRound なら前者、違えば後者
+  const int16_t second_hand_length = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2);
+
+  // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
+  int32_t second_angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
+  
+  // 分表示位置の算出
+  GPoint digit_minute = {
+    .x = (int16_t)(sin_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.x - digit_x_offset,
+    .y = (int16_t)(-cos_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.y - digit_y_offset,
+  };
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "digit_update_proc: (x,y)=%d:%d",digit_minute.x, digit_minute.y);
+
+  // 分表示
+  strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%M", t);
+  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+
+}
+
+
+
 // 日付の更新
 static void date_update_proc(Layer *layer, GContext *ctx) {
   // 現在時刻を取得
@@ -164,6 +205,7 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
+  //-----------------------------------------------------------------------------------------------------
   // 背景レイヤー（文字盤）を作成
   s_simple_bg_layer = layer_create(bounds);
   // 背景レイヤーが更新されたときのコールバック関数に bg_update_proc を設定
@@ -171,6 +213,7 @@ static void window_load(Window *window) {
   // 背景レイヤーを追加
   layer_add_child(window_layer, s_simple_bg_layer);
 
+  //-----------------------------------------------------------------------------------------------------
   // 針レイヤーを作成
   s_hands_layer = layer_create(bounds);
   // 針レイヤーが更新されたときのコールバック関数に hands_update_proc を設定
@@ -178,6 +221,28 @@ static void window_load(Window *window) {
   // 針レイヤーを追加
   layer_add_child(window_layer, s_hands_layer);
 
+  //-----------------------------------------------------------------------------------------------------
+  // デジタルレイヤーを作成
+  s_digit_layer = layer_create(bounds);
+  // デジタルレイヤーが更新されたときのコールバック関数に digit_update_proc を設定
+  layer_set_update_proc(s_digit_layer, digit_update_proc);
+  // デジタルレイヤーを追加
+  layer_add_child(window_layer, s_digit_layer);
+  
+  // 分テキストレイヤーを作成
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "window_load: start");
+  s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(90, 90, 30, 26),
+    GRect(72, 84, 30, 26)));
+  // 分テキストレイヤーの属性をセット
+  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+  text_layer_set_background_color(s_minute_label, GColorClear);
+  text_layer_set_text_color(s_minute_label, GColorCyan);
+  text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  // 分テキストレイヤーを追加
+  layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
+
+  //-----------------------------------------------------------------------------------------------------
   // 日付レイヤーを作成
   s_date_layer = layer_create(bounds);
   // 日付レイヤーが更新されたときのコールバック関数に date_update_proc を設定
