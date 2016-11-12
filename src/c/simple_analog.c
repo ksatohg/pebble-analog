@@ -131,8 +131,16 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 // 時刻文字表示の更新
 static void digit_update_proc(Layer *layer, GContext *ctx) {
 
-  #define digit_x_offset 5
-  #define digit_y_offset 10
+  #define digit_x_offset  10
+  #define digit_y_offset  17
+  #define top_limit       0
+  #define left_limit      0
+  #define right_limit     PBL_IF_ROUND_ELSE(180-22,144-22)
+  #define bottom_limit    PBL_IF_ROUND_ELSE(180-22,168-22)
+  
+  // 前回のテキストレイヤーを削除
+  text_layer_destroy(s_minute_label);
+  text_layer_destroy(s_hour_label);
   
   // APP_LOG(APP_LOG_LEVEL_DEBUG, "digit_update_proc: start");
   
@@ -144,24 +152,74 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
   
-  //------ 分表示位置の算出 -------
+  //------------ 分表示位置の算出 -------------
   // 中心からの距離を算出。PebbleRound なら前者、違えば後者
-  const int16_t second_hand_length = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2);
+  const int16_t radius_minute = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2 - 5 );
 
   // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
-  int32_t second_angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
+  int32_t angle_minute = TRIG_MAX_ANGLE * t->tm_min / 60;
   
   // 分表示位置の算出
   GPoint digit_minute = {
-    .x = (int16_t)(sin_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.x - digit_x_offset,
-    .y = (int16_t)(-cos_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.y - digit_y_offset,
+    .x = (int16_t)(sin_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.x - digit_x_offset,
+    .y = (int16_t)(-cos_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.y - digit_y_offset,
   };
-  // APP_LOG(APP_LOG_LEVEL_DEBUG, "digit_update_proc: (x,y)=%d:%d",digit_minute.x, digit_minute.y);
 
-  // 分表示
+  // 画面外に出た場合の補正
+  digit_minute.x = digit_minute.x < left_limit   ? left_limit   : digit_minute.x;
+  digit_minute.y = digit_minute.y < top_limit    ? top_limit    : digit_minute.y;
+  digit_minute.x = digit_minute.x > right_limit  ? right_limit  : digit_minute.x;
+  digit_minute.y = digit_minute.y > bottom_limit ? bottom_limit : digit_minute.y;
+  
+  // 分表示文字列
   strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%M", t);
-  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+  
+  //------------ 時表示位置の算出 -------------
+  // 中心からの距離を算出。PebbleRound なら前者、違えば後者
+  const int16_t radius_hour = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 35, bounds.size.w / 2 - 20 );
 
+  // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
+  //int32_t angle_hour = TRIG_MAX_ANGLE * t->tm_hour / 12;
+  int32_t angle_hour = (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6);
+  // 時表示位置の算出
+  GPoint digit_hour = {
+    .x = (int16_t)(sin_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.x - digit_x_offset,
+    .y = (int16_t)(-cos_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.y - digit_y_offset,
+  };
+
+  // 画面外に出た場合の補正
+  digit_hour.x = digit_hour.x < left_limit   ? left_limit   : digit_hour.x;
+  digit_hour.y = digit_hour.y < top_limit    ? top_limit    : digit_hour.y;
+  digit_hour.x = digit_hour.x > right_limit  ? right_limit  : digit_hour.x;
+  digit_hour.y = digit_hour.y > bottom_limit ? bottom_limit : digit_hour.y;
+  
+  // 時表示文字列
+  strftime(s_digit_hour_buffer, sizeof(s_digit_hour_buffer), "%H", t);
+  
+  //------------- 分テキストレイヤーを作成 -------------
+  s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(digit_minute.x , digit_minute.y, 22, 24),
+    GRect(digit_minute.x , digit_minute.y, 22, 24)));
+  // 分テキストレイヤーの属性をセット
+  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+  text_layer_set_background_color(s_minute_label, GColorClear);
+  text_layer_set_text_color(s_minute_label, GColorWhite);
+  text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  // 分テキストレイヤーを追加
+  layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
+
+  //------------- 時テキストレイヤーを作成 -------------
+  s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(digit_hour.x , digit_hour.y, 22, 24),
+    GRect(digit_hour.x , digit_hour.y, 22, 24)));
+  // 分テキストレイヤーの属性をセット
+  text_layer_set_text(s_hour_label, s_digit_hour_buffer);
+  text_layer_set_background_color(s_hour_label, GColorClear);
+  text_layer_set_text_color(s_hour_label, GColorWhite);
+  text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  // 分テキストレイヤーを追加
+  layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
+  
 }
 
 
@@ -173,7 +231,8 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
 
   // 日付フォーマットにして、日付テキストレイヤーにセット
-  strftime(s_num_buffer, sizeof(s_num_buffer), "%m/%d %a", t);
+  //strftime(s_num_buffer, sizeof(s_num_buffer), "%m/%d %a", t);
+  strftime(s_num_buffer, sizeof(s_num_buffer), "%d %a", t);
   text_layer_set_text(s_num_label, s_num_buffer);
   // 曜日フォーマットにして、曜日テキストレイヤーにセット
   //strftime(s_day_buffer, sizeof(s_day_buffer), "(%a)", t);
@@ -228,19 +287,6 @@ static void window_load(Window *window) {
   layer_set_update_proc(s_digit_layer, digit_update_proc);
   // デジタルレイヤーを追加
   layer_add_child(window_layer, s_digit_layer);
-  
-  // 分テキストレイヤーを作成
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "window_load: start");
-  s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90, 90, 30, 26),
-    GRect(72, 84, 30, 26)));
-  // 分テキストレイヤーの属性をセット
-  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
-  text_layer_set_background_color(s_minute_label, GColorClear);
-  text_layer_set_text_color(s_minute_label, GColorCyan);
-  text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  // 分テキストレイヤーを追加
-  layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
 
   //-----------------------------------------------------------------------------------------------------
   // 日付レイヤーを作成
@@ -252,8 +298,8 @@ static void window_load(Window *window) {
 
   // 日付テキストレイヤーを作成
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(45, 110, 100, 26),
-    GRect(30, 100, 100, 26)));
+    GRect(90-28, 90+15, 56, 26),
+    GRect(72-28, 72+15, 56, 26)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
   text_layer_set_background_color(s_num_label, GColorClear);
