@@ -12,7 +12,7 @@ static GPath *s_minute_arrow, *s_hour_arrow;
 static char s_num_buffer[12], s_day_buffer[6];
 static char s_bt_buffer[12];
 static bool bt_cond = true;
-static char s_digit_minute_buffer[6], s_digit_hour_buffer[6];
+static char s_digit_minute_buffer[10], s_digit_hour_buffer[6];
 
 // 背景の更新
 static void bg_update_proc(Layer *layer, GContext *ctx) {
@@ -131,12 +131,15 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 // 時刻文字表示の更新
 static void digit_update_proc(Layer *layer, GContext *ctx) {
 
-  #define digit_x_offset  10
-  #define digit_y_offset  17
-  #define top_limit       0
-  #define left_limit      0
-  #define right_limit     PBL_IF_ROUND_ELSE(180-22,144-22)
-  #define bottom_limit    PBL_IF_ROUND_ELSE(180-22,168-22)
+  #define DIGIT_X_OFFSET          10
+  #define DIGIT_X_OFFSET_LONG     20
+  #define DIGIT_Y_OFFSET          17
+  #define TOP_LIMIT               0
+  #define LEFT_LIMIT              0
+  #define BOTTOM_LIMIT            PBL_IF_ROUND_ELSE(180-22,168-22)
+  #define RIGHT_LIMIT             PBL_IF_ROUND_ELSE(180-22,144-22)
+  #define RIGHT_LIMIT_LONG        PBL_IF_ROUND_ELSE(180-45,144-45)
+  #define ANGLE_MERGE             TRIG_MAX_ANGLE * 18 / 360 
   
   // 前回のテキストレイヤーを削除
   text_layer_destroy(s_minute_label);
@@ -155,71 +158,117 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
   //------------ 分表示位置の算出 -------------
   // 中心からの距離を算出。PebbleRound なら前者、違えば後者
   const int16_t radius_minute = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2 - 5 );
-
   // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
   int32_t angle_minute = TRIG_MAX_ANGLE * t->tm_min / 60;
-  
-  // 分表示位置の算出
-  GPoint digit_minute = {
-    .x = (int16_t)(sin_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.x - digit_x_offset,
-    .y = (int16_t)(-cos_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.y - digit_y_offset,
-  };
-
-  // 画面外に出た場合の補正
-  digit_minute.x = digit_minute.x < left_limit   ? left_limit   : digit_minute.x;
-  digit_minute.y = digit_minute.y < top_limit    ? top_limit    : digit_minute.y;
-  digit_minute.x = digit_minute.x > right_limit  ? right_limit  : digit_minute.x;
-  digit_minute.y = digit_minute.y > bottom_limit ? bottom_limit : digit_minute.y;
-  
-  // 分表示文字列
-  strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%M", t);
+  //int32_t angle_minute = TRIG_MAX_ANGLE * t->tm_sec / 60;
   
   //------------ 時表示位置の算出 -------------
   // 中心からの距離を算出。PebbleRound なら前者、違えば後者
   const int16_t radius_hour = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 35, bounds.size.w / 2 - 20 );
-
   // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
-  //int32_t angle_hour = TRIG_MAX_ANGLE * t->tm_hour / 12;
   int32_t angle_hour = (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6);
-  // 時表示位置の算出
-  GPoint digit_hour = {
-    .x = (int16_t)(sin_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.x - digit_x_offset,
-    .y = (int16_t)(-cos_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.y - digit_y_offset,
-  };
 
-  // 画面外に出た場合の補正
-  digit_hour.x = digit_hour.x < left_limit   ? left_limit   : digit_hour.x;
-  digit_hour.y = digit_hour.y < top_limit    ? top_limit    : digit_hour.y;
-  digit_hour.x = digit_hour.x > right_limit  ? right_limit  : digit_hour.x;
-  digit_hour.y = digit_hour.y > bottom_limit ? bottom_limit : digit_hour.y;
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "digit_update_proc: minute:%d  hour:%d  TRIG_MAX_ANGLE:%d", angle_minute, angle_hour, TRIG_MAX_ANGLE);
   
-  // 時表示文字列
-  strftime(s_digit_hour_buffer, sizeof(s_digit_hour_buffer), "%H", t);
-  
-  //------------- 分テキストレイヤーを作成 -------------
-  s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(digit_minute.x , digit_minute.y, 22, 24),
-    GRect(digit_minute.x , digit_minute.y, 22, 24)));
-  // 分テキストレイヤーの属性をセット
-  text_layer_set_text(s_minute_label, s_digit_minute_buffer);
-  text_layer_set_background_color(s_minute_label, GColorClear);
-  text_layer_set_text_color(s_minute_label, GColorWhite);
-  text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  // 分テキストレイヤーを追加
-  layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
+  // 時分の角度差を算出
+  int32_t angle_diff = (angle_minute > angle_hour ? angle_minute - angle_hour : angle_hour - angle_minute);
+  angle_diff = (angle_diff > TRIG_MAX_ANGLE * 180 / 360 ? TRIG_MAX_ANGLE - angle_diff : angle_diff);
 
-  //------------- 時テキストレイヤーを作成 -------------
-  s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(digit_hour.x , digit_hour.y, 22, 24),
-    GRect(digit_hour.x , digit_hour.y, 22, 24)));
-  // 分テキストレイヤーの属性をセット
-  text_layer_set_text(s_hour_label, s_digit_hour_buffer);
-  text_layer_set_background_color(s_hour_label, GColorClear);
-  text_layer_set_text_color(s_hour_label, GColorWhite);
-  text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  // 分テキストレイヤーを追加
-  layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
+    // 時分の角度が近づいていれば
+  if ( angle_diff < ANGLE_MERGE ) 
+  {
+    //------------ 時・分を合体して表示する ------------
+    // 分表示位置の算出
+    GPoint digit_minute = {
+      .x = (int16_t)(sin_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.x - DIGIT_X_OFFSET_LONG,
+      .y = (int16_t)(-cos_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.y - DIGIT_Y_OFFSET,
+    };
+    
+    // 画面外に出た場合の補正
+    digit_minute.x = digit_minute.x < LEFT_LIMIT       ? LEFT_LIMIT       : digit_minute.x;
+    digit_minute.y = digit_minute.y < TOP_LIMIT        ? TOP_LIMIT        : digit_minute.y;
+    digit_minute.x = digit_minute.x > RIGHT_LIMIT_LONG ? RIGHT_LIMIT_LONG : digit_minute.x;
+    digit_minute.y = digit_minute.y > BOTTOM_LIMIT     ? BOTTOM_LIMIT     : digit_minute.y;
+    // 分表示文字列
+    strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%H:%M", t);
+
+    // 分テキストレイヤーを作成
+    s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x , digit_minute.y, 47, 24),
+      GRect(digit_minute.x , digit_minute.y, 47, 24)));
+    // 分テキストレイヤーの属性をセット
+    text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+    text_layer_set_background_color(s_minute_label, GColorClear);
+    text_layer_set_text_color(s_minute_label, GColorWhite);
+    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 分テキストレイヤーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
+
+    // 時テキストレイヤーを作成（double freeで落ちるのを防ぐためのダミー。表示はなし）
+    s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x , digit_minute.y, -100, -100),
+      GRect(digit_minute.x , digit_minute.y, -100, -100)));
+    // 時テキストレイヤーの属性をセット
+    text_layer_set_text(s_hour_label, s_digit_minute_buffer);
+    text_layer_set_background_color(s_hour_label, GColorClear);
+    text_layer_set_text_color(s_hour_label, GColorClear);
+    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 時テキストレイヤーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
+    
+  } else {  
+    //------------ 時・分を別々に表示する ------------
+    // 分表示位置の算出
+    GPoint digit_minute = {
+      .x = (int16_t)(sin_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.x - DIGIT_X_OFFSET,
+      .y = (int16_t)(-cos_lookup(angle_minute) * (int32_t)radius_minute / TRIG_MAX_RATIO) + center.y - DIGIT_Y_OFFSET,
+    };
+    // 画面外に出た場合の補正
+    digit_minute.x = digit_minute.x < LEFT_LIMIT   ? LEFT_LIMIT   : digit_minute.x;
+    digit_minute.y = digit_minute.y < TOP_LIMIT    ? TOP_LIMIT    : digit_minute.y;
+    digit_minute.x = digit_minute.x > RIGHT_LIMIT  ? RIGHT_LIMIT  : digit_minute.x;
+    digit_minute.y = digit_minute.y > BOTTOM_LIMIT ? BOTTOM_LIMIT : digit_minute.y;
+    // 分表示文字列
+    strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%M", t);
+
+    // 時表示位置の算出
+    GPoint digit_hour = {
+      .x = (int16_t)(sin_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.x - DIGIT_X_OFFSET,
+      .y = (int16_t)(-cos_lookup(angle_hour) * (int32_t)radius_hour / TRIG_MAX_RATIO) + center.y - DIGIT_Y_OFFSET,
+    };
+    // 画面外に出た場合の補正
+    digit_hour.x = digit_hour.x < LEFT_LIMIT   ? LEFT_LIMIT   : digit_hour.x;
+    digit_hour.y = digit_hour.y < TOP_LIMIT    ? TOP_LIMIT    : digit_hour.y;
+    digit_hour.x = digit_hour.x > RIGHT_LIMIT  ? RIGHT_LIMIT  : digit_hour.x;
+    digit_hour.y = digit_hour.y > BOTTOM_LIMIT ? BOTTOM_LIMIT : digit_hour.y;
+    // 時表示文字列
+    strftime(s_digit_hour_buffer, sizeof(s_digit_hour_buffer), "%H", t);
+
+    // 分テキストレイヤーを作成
+    s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x , digit_minute.y, 22, 24),
+      GRect(digit_minute.x , digit_minute.y, 22, 24)));
+    // 分テキストレイヤーの属性をセット
+    text_layer_set_text(s_minute_label, s_digit_minute_buffer);
+    text_layer_set_background_color(s_minute_label, GColorClear);
+    text_layer_set_text_color(s_minute_label, GColorWhite);
+    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 分テキストレイヤーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
   
+    // 時テキストレイヤーを作成
+    s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_hour.x , digit_hour.y, 22, 24),
+      GRect(digit_hour.x , digit_hour.y, 22, 24)));
+    // 時テキストレイヤーの属性をセット
+    text_layer_set_text(s_hour_label, s_digit_hour_buffer);
+    text_layer_set_background_color(s_hour_label, GColorClear);
+    text_layer_set_text_color(s_hour_label, GColorWhite);
+    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 時テキストレイヤーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
+    
+  }
 }
 
 
