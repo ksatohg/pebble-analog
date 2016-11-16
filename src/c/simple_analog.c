@@ -4,7 +4,7 @@
 
 static Window *s_window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer, *s_digit_layer;
-static TextLayer *s_hour_label, *s_minute_label, *s_day_label, *s_num_label, *s_bt_label;
+static TextLayer *s_hour_label, *s_minute_label, *s_hour_label2, *s_minute_label2, *s_day_label, *s_num_label, *s_num_label2, *s_bt_label;
 
 static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPath *s_minute_arrow, *s_hour_arrow;
@@ -141,6 +141,8 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
   #define ANGLE_MERGE             TRIG_MAX_ANGLE * 18 / 360 
   
   // 前回のテキストレイヤーを削除
+  text_layer_destroy(s_minute_label2);
+  text_layer_destroy(s_hour_label2);
   text_layer_destroy(s_minute_label);
   text_layer_destroy(s_hour_label);
   
@@ -191,6 +193,18 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     // 分表示文字列
     strftime(s_digit_minute_buffer, sizeof(s_digit_minute_buffer), "%H:%M", t);
 
+    // 分テキストレイヤー（影）を作成
+    s_minute_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x , digit_minute.y, 47, 24),
+      GRect(digit_minute.x , digit_minute.y, 47, 24)));
+    // 分テキストレイヤ（影）ーの属性をセット
+    text_layer_set_text(s_minute_label2, s_digit_minute_buffer);
+    text_layer_set_background_color(s_minute_label2, GColorClear);
+    text_layer_set_text_color(s_minute_label2, GColorDarkGray);
+    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 分テキストレイヤー（影）を追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label2));
+
     // 分テキストレイヤーを作成
     s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
       GRect(digit_minute.x , digit_minute.y, 47, 24),
@@ -202,6 +216,18 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
     // 分テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
+
+    // 時テキストレイヤ（影）ーを作成（double freeで落ちるのを防ぐためのダミー。表示はなし）
+    s_hour_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x+2 , digit_minute.y+2, -100, -100),
+      GRect(digit_minute.x+2 , digit_minute.y+2, -100, -100)));
+    // 時テキストレイヤ（影）ーの属性をセット
+    text_layer_set_text(s_hour_label2, s_digit_minute_buffer);
+    text_layer_set_background_color(s_hour_label2, GColorClear);
+    text_layer_set_text_color(s_hour_label2, GColorClear);
+    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 時テキストレイヤ（影）ーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label2));
 
     // 時テキストレイヤーを作成（double freeで落ちるのを防ぐためのダミー。表示はなし）
     s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
@@ -243,6 +269,18 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     // 時表示文字列
     strftime(s_digit_hour_buffer, sizeof(s_digit_hour_buffer), "%H", t);
 
+    // 分テキストレイヤ（影）ーを作成
+    s_minute_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 24),
+      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 24)));
+    // 分テキストレイヤ（影）ーの属性をセット
+    text_layer_set_text(s_minute_label2, s_digit_minute_buffer);
+    text_layer_set_background_color(s_minute_label2, GColorClear);
+    text_layer_set_text_color(s_minute_label2, GColorDarkGray);
+    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 分テキストレイヤ（影）ーを追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label2));
+  
     // 分テキストレイヤーを作成
     s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
       GRect(digit_minute.x , digit_minute.y, 22, 24),
@@ -255,6 +293,18 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     // 分テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
   
+    // 時テキストレイヤー（影）を作成
+    s_hour_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 24),
+      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 24)));
+    // 時テキストレイヤー（影）の属性をセット
+    text_layer_set_text(s_hour_label2, s_digit_hour_buffer);
+    text_layer_set_background_color(s_hour_label2, GColorClear);
+    text_layer_set_text_color(s_hour_label2, GColorDarkGray);
+    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // 時テキストレイヤー（影）を追加
+    layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label2));
+    
     // 時テキストレイヤーを作成
     s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
       GRect(digit_hour.x , digit_hour.y, 22, 24),
@@ -281,6 +331,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   // 日付フォーマットにして、日付テキストレイヤーにセット
   //strftime(s_num_buffer, sizeof(s_num_buffer), "%m/%d %a", t);
   strftime(s_num_buffer, sizeof(s_num_buffer), "%d %a", t);
+  text_layer_set_text(s_num_label2, s_num_buffer);
   text_layer_set_text(s_num_label, s_num_buffer);
   // 曜日フォーマットにして、曜日テキストレイヤーにセット
   //strftime(s_day_buffer, sizeof(s_day_buffer), "(%a)", t);
@@ -339,10 +390,20 @@ static void window_load(Window *window) {
   layer_set_update_proc(s_date_layer, date_update_proc);
   // 日付レイヤーを追加
   layer_add_child(window_layer, s_date_layer);
+  // 日付テキストレイヤー（影）を作成 
+  s_num_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(90-30+2, 90+20+2, 70, 33),
+    GRect(72-30+2, 72+20+2, 70, 33)));
+  // 日付（影）をセット
+  text_layer_set_text(s_num_label2, s_num_buffer);
+  text_layer_set_background_color(s_num_label2, GColorClear);
+  text_layer_set_text_color(s_num_label2, GColorDarkGray);
+  text_layer_set_font(s_num_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  layer_add_child(s_date_layer, text_layer_get_layer(s_num_label2));
   // 日付テキストレイヤーを作成 
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90-30, 90+15, 70, 33),
-    GRect(72-30, 72+15, 70, 33)));
+    GRect(90-30, 90+20, 70, 33),
+    GRect(72-30, 72+20, 70, 33)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
   text_layer_set_background_color(s_num_label, GColorClear);
@@ -383,8 +444,11 @@ static void window_unload(Window *window) {
 
   text_layer_destroy(s_hour_label);
   text_layer_destroy(s_minute_label);
+  text_layer_destroy(s_hour_label2);
+  text_layer_destroy(s_minute_label2);
   text_layer_destroy(s_day_label);
   text_layer_destroy(s_num_label);
+  text_layer_destroy(s_num_label2);
   text_layer_destroy(s_bt_label);
 }
 

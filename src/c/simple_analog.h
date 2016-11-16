@@ -2,7 +2,7 @@
 
 #include "pebble.h"
 
-#define NUM_CLOCK_TICKS 11
+#define NUM_CLOCK_TICKS 13
 
 static const struct GPathInfo ANALOG_BG_POINTS[] = {
   { 4,
@@ -34,6 +34,13 @@ static const struct GPathInfo ANALOG_BG_POINTS[] = {
       {135, 49}
     }
   },
+  { 4, (GPoint []){ //3
+      {140, 83},
+      {154, 83},
+      {154, 85},
+      {140, 85}
+    }
+  },
   { 4, (GPoint []){
       {135, 118},
       {144, 123},
@@ -48,7 +55,7 @@ static const struct GPathInfo ANALOG_BG_POINTS[] = {
       {106, 147}
     }
   },
-  { 4, (GPoint []){
+  { 4, (GPoint []){ //6
       {70, 155},
       {73, 155},
       {73, 167},
@@ -67,6 +74,13 @@ static const struct GPathInfo ANALOG_BG_POINTS[] = {
       {-1, 40},
       {-1, 44},
       {9, 49}
+    }
+  },
+  { 4, (GPoint []){ // 9
+      {-10, 83},
+      {4, 83},
+      {4, 85},
+      {-10, 85}
     }
   },
   { 4, (GPoint []){
@@ -106,7 +120,7 @@ static const GPathInfo HOUR_HAND_POINTS = {
 
 // バイブレーションパターンの定義
 #define ON_S 200
-#define OFF_S 150
+#define OFF_S 200
 #define ON_L 400
 #define OFF_L 200
 
