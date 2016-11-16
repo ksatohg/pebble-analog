@@ -2,9 +2,9 @@
     "author": "KazutoshiSatoh",
     "dependencies": {},
     "keywords": [],
-    "name": "my-analog-watch",
+    "name": "ana-digi",
     "pebble": {
-        "displayName": "My Analog Watch",
+        "displayName": "ana-digi",
         "enableMultiJS": false,
         "messageKeys": [],
         "projectType": "native",

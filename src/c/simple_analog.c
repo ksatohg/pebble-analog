@@ -4,8 +4,7 @@
 
 static Window *s_window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer, *s_digit_layer;
-static TextLayer *s_hour_label, *s_minute_label;
-static TextLayer *s_day_label, *s_num_label, *s_bt_label;
+static TextLayer *s_hour_label, *s_minute_label, *s_day_label, *s_num_label, *s_bt_label;
 
 static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPath *s_minute_arrow, *s_hour_arrow;
@@ -14,7 +13,7 @@ static char s_bt_buffer[12];
 static bool bt_cond = true;
 static char s_digit_minute_buffer[10], s_digit_hour_buffer[6];
 
-// 背景の更新
+// 背景の更新 ========================================================================
 static void bg_update_proc(Layer *layer, GContext *ctx) {
   // 背景レイヤーを黒で塗りつぶし
   graphics_context_set_fill_color(ctx, GColorBlack);
@@ -29,7 +28,7 @@ static void bg_update_proc(Layer *layer, GContext *ctx) {
   }
 }
 
-// 針の更新
+// 針の更新 ========================================================================
 static void hands_update_proc(Layer *layer, GContext *ctx) {
   // レイヤーの矩形と中心を取得
   GRect bounds = layer_get_bounds(layer);
@@ -128,7 +127,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 }
 
 
-// 時刻文字表示の更新
+// 時刻文字表示の更新 ========================================================================
 static void digit_update_proc(Layer *layer, GContext *ctx) {
 
   #define DIGIT_X_OFFSET          10
@@ -273,7 +272,7 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
 
 
 
-// 日付の更新
+// 日付の更新 ========================================================================
 static void date_update_proc(Layer *layer, GContext *ctx) {
   // 現在時刻を取得
   time_t now = time(NULL);
@@ -288,7 +287,7 @@ static void date_update_proc(Layer *layer, GContext *ctx) {
   //text_layer_set_text(s_day_label, s_day_buffer);
 }
 
-// 秒タイマー
+// 秒タイマー ========================================================================
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   layer_mark_dirty(window_get_root_layer(s_window));
   // Layerを”dirty”にマークするものらしい。
@@ -296,7 +295,7 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   // layer_mark_dirtyを呼んだ瞬間に再描画されるわけではなく、非同期で短時間後に再描画されるとのこと。
 }
 
-// BT接続状況の更新
+// BT接続状況の更新 ========================================================================
 static void handle_bluetooth(bool connected) {
   text_layer_set_text(s_bt_label, connected ? "" : "BT LOST !!");
   // APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_bluetooth: connected is %s", connected ? "true" : "false");
@@ -307,56 +306,51 @@ static void handle_bluetooth(bool connected) {
   }
 }
 
-// ウインドウのロード時の処理
+// ウインドウのロード時の処理 ========================================================================
 static void window_load(Window *window) {
   // ルートレイヤーを取得し、その矩形を得る
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  //-----------------------------------------------------------------------------------------------------
-  // 背景レイヤー（文字盤）を作成
+  // 背景レイヤー（文字盤）を作成 --------------------------
   s_simple_bg_layer = layer_create(bounds);
   // 背景レイヤーが更新されたときのコールバック関数に bg_update_proc を設定
   layer_set_update_proc(s_simple_bg_layer, bg_update_proc);
   // 背景レイヤーを追加
   layer_add_child(window_layer, s_simple_bg_layer);
 
-  //-----------------------------------------------------------------------------------------------------
-  // 針レイヤーを作成
+  // 針レイヤーを作成 --------------------------
   s_hands_layer = layer_create(bounds);
   // 針レイヤーが更新されたときのコールバック関数に hands_update_proc を設定
   layer_set_update_proc(s_hands_layer, hands_update_proc);
   // 針レイヤーを追加
   layer_add_child(window_layer, s_hands_layer);
 
-  //-----------------------------------------------------------------------------------------------------
-  // デジタルレイヤーを作成
+  // デジタルレイヤーを作成 --------------------------
   s_digit_layer = layer_create(bounds);
   // デジタルレイヤーが更新されたときのコールバック関数に digit_update_proc を設定
   layer_set_update_proc(s_digit_layer, digit_update_proc);
   // デジタルレイヤーを追加
   layer_add_child(window_layer, s_digit_layer);
 
-  //-----------------------------------------------------------------------------------------------------
-  // 日付レイヤーを作成
+  // 日付レイヤーを作成 --------------------------
   s_date_layer = layer_create(bounds);
   // 日付レイヤーが更新されたときのコールバック関数に date_update_proc を設定
   layer_set_update_proc(s_date_layer, date_update_proc);
   // 日付レイヤーを追加
   layer_add_child(window_layer, s_date_layer);
-
-  // 日付テキストレイヤーを作成
+  // 日付テキストレイヤーを作成 
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90-28, 90+15, 56, 26),
-    GRect(72-28, 72+15, 56, 26)));
+    GRect(90-30, 90+15, 70, 33),
+    GRect(72-30, 72+15, 70, 33)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
   text_layer_set_background_color(s_num_label, GColorClear);
   text_layer_set_text_color(s_num_label, GColorCyan);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
 
-  //// 曜日テキストレイヤーを作成
+  //// 曜日テキストレイヤーを作成 --------------------------
   //s_day_label = text_layer_create(PBL_IF_ROUND_ELSE(
   //  GRect(50, 114, 50, 20),
   //  GRect(50, 114, 50, 20)));
@@ -367,7 +361,7 @@ static void window_load(Window *window) {
   //text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   //layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
 
-  // BTテキストレイヤーを作成
+  // BTテキストレイヤーを作成 --------------------------
   s_bt_label = text_layer_create(PBL_IF_ROUND_ELSE(
     GRect(55,  70, 100, 20),
     GRect(40,  50, 100, 20)));
@@ -384,11 +378,14 @@ static void window_load(Window *window) {
 static void window_unload(Window *window) {
   layer_destroy(s_simple_bg_layer);
   layer_destroy(s_date_layer);
+  layer_destroy(s_hands_layer);
+  layer_destroy(s_digit_layer);
 
+  text_layer_destroy(s_hour_label);
+  text_layer_destroy(s_minute_label);
   text_layer_destroy(s_day_label);
   text_layer_destroy(s_num_label);
-
-  layer_destroy(s_hands_layer);
+  text_layer_destroy(s_bt_label);
 }
 
 static void init() {
@@ -407,7 +404,7 @@ static void init() {
   s_minute_arrow = gpath_create(&MINUTE_HAND_POINTS);
   s_hour_arrow = gpath_create(&HOUR_HAND_POINTS);
 
-  // ルートレイヤーを取得し、その矩形を得る 
+  // ルートレイヤーを取得し、その矩形を得る ==============================================================
   Layer *window_layer = window_get_root_layer(s_window);
   GRect bounds = layer_get_bounds(window_layer);
   // ルートレイヤーの中心

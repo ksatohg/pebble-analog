@@ -106,7 +106,7 @@ static const GPathInfo HOUR_HAND_POINTS = {
 
 // バイブレーションパターンの定義
 #define ON_S 200
-#define OFF_S 100
+#define OFF_S 150
 #define ON_L 400
 #define OFF_L 200
 
