@@ -4,7 +4,7 @@
 
 static Window *s_window;
 static Layer *s_simple_bg_layer, *s_date_layer, *s_hands_layer, *s_digit_layer;
-static TextLayer *s_hour_label, *s_minute_label, *s_hour_label2, *s_minute_label2, *s_day_label, *s_num_label, *s_num_label2, *s_bt_label;
+static TextLayer *s_hour_label, *s_minute_label, *s_hour_label2, *s_minute_label2, *s_day_label, *s_num_label, *s_num_label2, *s_bt_label, *s_bt_label2;
 
 static GPath *s_tick_paths[NUM_CLOCK_TICKS];
 static GPath *s_minute_arrow, *s_hour_arrow;
@@ -58,7 +58,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_stroke_color(ctx, GColorBlack);
 
   // 長針を分の角度に回転する
-  gpath_rotate_to(s_minute_arrow, TRIG_MAX_ANGLE * t->tm_min / 60);
+  //gpath_rotate_to(s_minute_arrow, TRIG_MAX_ANGLE * t->tm_min / 60);
+  gpath_rotate_to(s_minute_arrow, TRIG_MAX_ANGLE * (((double)t->tm_min * 60 + (double)t->tm_sec) / (60 * 60)));
   gpath_draw_filled(ctx, s_minute_arrow);
   gpath_draw_outline(ctx, s_minute_arrow);
 
@@ -160,9 +161,9 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
   // 中心からの距離を算出。PebbleRound なら前者、違えば後者
   const int16_t radius_minute = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 19, bounds.size.w / 2 - 5 );
   // 角度を算出 （TRIG_MAX_ANGLE は360度のこと）
-  int32_t angle_minute = TRIG_MAX_ANGLE * t->tm_min / 60;
   //int32_t angle_minute = TRIG_MAX_ANGLE * t->tm_sec / 60;
-  
+  int32_t angle_minute = TRIG_MAX_ANGLE * (((double)t->tm_min * 60 + (double)t->tm_sec) / (60 * 60));
+
   //------------ 時表示位置の算出 -------------
   // 中心からの距離を算出。PebbleRound なら前者、違えば後者
   const int16_t radius_hour = PBL_IF_ROUND_ELSE((bounds.size.w / 2) - 35, bounds.size.w / 2 - 20 );
@@ -195,25 +196,25 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
 
     // 分テキストレイヤー（影）を作成
     s_minute_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_minute.x , digit_minute.y, 47, 24),
-      GRect(digit_minute.x , digit_minute.y, 47, 24)));
+      GRect(digit_minute.x+2 , digit_minute.y+2, 50, 33),
+      GRect(digit_minute.x+2 , digit_minute.y+2, 50, 33)));
     // 分テキストレイヤ（影）ーの属性をセット
     text_layer_set_text(s_minute_label2, s_digit_minute_buffer);
     text_layer_set_background_color(s_minute_label2, GColorClear);
-    text_layer_set_text_color(s_minute_label2, GColorDarkGray);
-    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_text_color(s_minute_label2, GColorBlack);
+    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 分テキストレイヤー（影）を追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label2));
 
     // 分テキストレイヤーを作成
     s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_minute.x , digit_minute.y, 47, 24),
-      GRect(digit_minute.x , digit_minute.y, 47, 24)));
+      GRect(digit_minute.x , digit_minute.y, 50, 33),
+      GRect(digit_minute.x , digit_minute.y, 50, 33)));
     // 分テキストレイヤーの属性をセット
     text_layer_set_text(s_minute_label, s_digit_minute_buffer);
     text_layer_set_background_color(s_minute_label, GColorClear);
     text_layer_set_text_color(s_minute_label, GColorWhite);
-    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 分テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
 
@@ -225,7 +226,7 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     text_layer_set_text(s_hour_label2, s_digit_minute_buffer);
     text_layer_set_background_color(s_hour_label2, GColorClear);
     text_layer_set_text_color(s_hour_label2, GColorClear);
-    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 時テキストレイヤ（影）ーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label2));
 
@@ -237,7 +238,7 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
     text_layer_set_text(s_hour_label, s_digit_minute_buffer);
     text_layer_set_background_color(s_hour_label, GColorClear);
     text_layer_set_text_color(s_hour_label, GColorClear);
-    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 時テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
     
@@ -271,49 +272,49 @@ static void digit_update_proc(Layer *layer, GContext *ctx) {
 
     // 分テキストレイヤ（影）ーを作成
     s_minute_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 24),
-      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 24)));
+      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 33),
+      GRect(digit_minute.x+2 , digit_minute.y+2, 22, 33)));
     // 分テキストレイヤ（影）ーの属性をセット
     text_layer_set_text(s_minute_label2, s_digit_minute_buffer);
     text_layer_set_background_color(s_minute_label2, GColorClear);
-    text_layer_set_text_color(s_minute_label2, GColorDarkGray);
-    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_text_color(s_minute_label2, GColorBlack);
+    text_layer_set_font(s_minute_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 分テキストレイヤ（影）ーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label2));
   
     // 分テキストレイヤーを作成
     s_minute_label = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_minute.x , digit_minute.y, 22, 24),
-      GRect(digit_minute.x , digit_minute.y, 22, 24)));
+      GRect(digit_minute.x , digit_minute.y, 22, 33),
+      GRect(digit_minute.x , digit_minute.y, 22, 33)));
     // 分テキストレイヤーの属性をセット
     text_layer_set_text(s_minute_label, s_digit_minute_buffer);
     text_layer_set_background_color(s_minute_label, GColorClear);
     text_layer_set_text_color(s_minute_label, GColorWhite);
-    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_minute_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 分テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_minute_label));
   
     // 時テキストレイヤー（影）を作成
     s_hour_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 24),
-      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 24)));
+      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 33),
+      GRect(digit_hour.x+2 , digit_hour.y+2, 22, 33)));
     // 時テキストレイヤー（影）の属性をセット
     text_layer_set_text(s_hour_label2, s_digit_hour_buffer);
     text_layer_set_background_color(s_hour_label2, GColorClear);
-    text_layer_set_text_color(s_hour_label2, GColorDarkGray);
-    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_text_color(s_hour_label2, GColorBlack);
+    text_layer_set_font(s_hour_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 時テキストレイヤー（影）を追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label2));
     
     // 時テキストレイヤーを作成
     s_hour_label = text_layer_create(PBL_IF_ROUND_ELSE(
-      GRect(digit_hour.x , digit_hour.y, 22, 24),
-      GRect(digit_hour.x , digit_hour.y, 22, 24)));
+      GRect(digit_hour.x , digit_hour.y, 22, 33),
+      GRect(digit_hour.x , digit_hour.y, 22, 33)));
     // 時テキストレイヤーの属性をセット
     text_layer_set_text(s_hour_label, s_digit_hour_buffer);
     text_layer_set_background_color(s_hour_label, GColorClear);
     text_layer_set_text_color(s_hour_label, GColorWhite);
-    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_hour_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     // 時テキストレイヤーを追加
     layer_add_child(s_digit_layer, text_layer_get_layer(s_hour_label));
     
@@ -349,6 +350,7 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
 // BT接続状況の更新 ========================================================================
 static void handle_bluetooth(bool connected) {
   text_layer_set_text(s_bt_label, connected ? "" : "BT LOST !!");
+  text_layer_set_text(s_bt_label2, connected ? "" : "BT LOST !!");
   // APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_bluetooth: connected is %s", connected ? "true" : "false");
   // APP_LOG(APP_LOG_LEVEL_DEBUG, "handle_bluetooth: bt_cond is %s", bt_cond ? "true" : "false");
   if (connected != bt_cond) {
@@ -392,23 +394,23 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, s_date_layer);
   // 日付テキストレイヤー（影）を作成 
   s_num_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90-30+2, 90+20+2, 70, 33),
-    GRect(72-30+2, 72+20+2, 70, 33)));
+    GRect(90-40+2, 90+5+2, 90, 33),
+    GRect(72-40+2, 84+5+2, 90, 33)));
   // 日付（影）をセット
   text_layer_set_text(s_num_label2, s_num_buffer);
   text_layer_set_background_color(s_num_label2, GColorClear);
-  text_layer_set_text_color(s_num_label2, GColorDarkGray);
-  text_layer_set_font(s_num_label2, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_text_color(s_num_label2, GColorBlack);
+  text_layer_set_font(s_num_label2, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label2));
   // 日付テキストレイヤーを作成 
   s_num_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(90-30, 90+20, 70, 33),
-    GRect(72-30, 72+20, 70, 33)));
+    GRect(90-40, 90+5, 90, 33),
+    GRect(72-40, 84+5, 90, 33)));
   // 日付をセット
   text_layer_set_text(s_num_label, s_num_buffer);
   text_layer_set_background_color(s_num_label, GColorClear);
   text_layer_set_text_color(s_num_label, GColorCyan);
-  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_font(s_num_label, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   layer_add_child(s_date_layer, text_layer_get_layer(s_num_label));
 
   //// 曜日テキストレイヤーを作成 --------------------------
@@ -422,11 +424,21 @@ static void window_load(Window *window) {
   //text_layer_set_font(s_day_label, fonts_get_system_font(FONT_KEY_GOTHIC_18));
   //layer_add_child(s_date_layer, text_layer_get_layer(s_day_label));
 
+  // BTテキストレイヤー（影）を作成 --------------------------
+  s_bt_label2 = text_layer_create(PBL_IF_ROUND_ELSE(
+    GRect(90-30+2,  90-40+2, 100, 20),
+    GRect(72-30+2,  84-40+2, 100, 20)));
+  // BTテキストレイヤー（影）をセット
+  text_layer_set_text(s_bt_label2, s_bt_buffer);
+  text_layer_set_background_color(s_bt_label2, GColorClear);
+  text_layer_set_text_color(s_bt_label2, GColorBlack);
+  text_layer_set_font(s_bt_label2, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  layer_add_child(s_date_layer, text_layer_get_layer(s_bt_label2));
   // BTテキストレイヤーを作成 --------------------------
   s_bt_label = text_layer_create(PBL_IF_ROUND_ELSE(
-    GRect(55,  70, 100, 20),
-    GRect(40,  50, 100, 20)));
-  // 日付をセット
+    GRect(90-30,  90-40, 100, 20),
+    GRect(72-30,  84-40, 100, 20)));
+  // BTテキストレイヤーをセット
   text_layer_set_text(s_bt_label, s_bt_buffer);
   text_layer_set_background_color(s_bt_label, GColorClear);
   text_layer_set_text_color(s_bt_label, GColorRed);
